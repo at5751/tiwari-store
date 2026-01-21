@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiwari General Store – Online Shopping</title>
+<style>
+:root{--green:#0f9d58;--dark:#111827;--bg:#f3f4f6}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg)}
+header{background:linear-gradient(90deg,#0f9d58,#34d399);color:#fff;padding:1rem;position:sticky;top:0;z-index:10}
+header h1{margin:0}
+header p{margin:.2rem 0 0}
+nav{background:var(--dark);color:#fff;display:flex;gap:1rem;padding:.6rem;overflow-x:auto}
+nav a{color:#fff;text-decoration:none;font-weight:bold;cursor:pointer}
+main{max-width:1400px;margin:auto;padding:1rem}
+.panel{background:#fff;border-radius:16px;padding:1rem;margin-bottom:1.5rem;box-shadow:0 6px 14px rgba(0,0,0,.08)}
+.panel h2{margin:.2rem 0 1rem}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem}
+.product{border:1px solid #e5e7eb;border-radius:14px;padding:.6rem;text-align:center}
+.pic{height:90px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#ecfeff}
+.product h4{font-size:.9rem;margin:.4rem 0 .2rem}
+.product p{margin:.1rem 0;font-weight:bold;color:var(--green)}
+.qty{display:flex;justify-content:center;align-items:center;gap:.5rem;margin-top:.4rem}
+.qty button{width:28px;height:28px;border:none;border-radius:50%;background:#e5e7eb;cursor:pointer;font-size:1.1rem}
+.cart-panel{background:#fff;border-radius:16px;padding:1rem;box-shadow:0 6px 14px rgba(0,0,0,.08)}
+.cart-item{display:flex;justify-content:space-between;border-bottom:1px dashed #e5e7eb;padding:.4rem 0;font-size:.95rem}
+.cart-item:last-child{border-bottom:none}
+.cart-fab{position:fixed;bottom:20px;right:20px;background:var(--green);color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold}
+button.checkout{background:var(--green);color:#fff;border:none;padding:.6rem 1rem;border-radius:8px;cursor:pointer;margin-top:.6rem}
+.lang{position:absolute;top:15px;right:15px}
+.lang button{margin-left:.3rem;border:none;padding:.3rem .6rem;border-radius:6px;cursor:pointer}
+.login{position:fixed;bottom:20px;left:20px;background:#fff;border-radius:12px;padding:.6rem 1rem;box-shadow:0 6px 14px rgba(0,0,0,.1)}
+#searchBar{width:100%;padding:.5rem;border-radius:8px;border:1px solid #ccc;margin-bottom:1rem;font-size:1rem}
+</style>
+</head>
+<body>
+<header>
+<h1 id="title">Tiwari General Store</h1>
+<p id="subtitle">Online Shopping – Satoha, Mathura</p>
+<div class="lang">
+<button onclick="setLang('en')">EN</button>
+<button onclick="setLang('hi')">हिं</button>
+</div>
+</header>
+
+<nav>
+<a onclick="scrollToPanel('groceries')">Groceries</a>
+<a onclick="scrollToPanel('snacks')">Snacks</a>
+<a onclick="scrollToPanel('cart')">Cart</a>
+</nav>
+
+<main>
+<input type="text" id="searchBar" placeholder="Search products..." oninput="filterProducts()">
+<div class="panel" id="groceries">
+<h2 id="gTitle">Groceries & Daily Needs</h2>
+<div class="products" id="groceryList"></div>
+</div>
+
+<div class="panel" id="snacks">
+<h2 id="sTitle">Snacks & Biscuits</h2>
+<div class="products" id="snackList"></div>
+</div>
+
+<div class="panel cart-panel" id="cart">
+<h2 id="cTitle">🛒 Your Cart</h2>
+<div id="cartItems">No items added</div>
+<h3 id="total">Total: ₹0</h3>
+<button class="checkout" onclick="checkout()">Order on WhatsApp</button>
+</div>
+</main>
+
+<div class="cart-fab" id="cartCount">0</div>
+
+<div class="login" id="loginBox">
+<input id="custName" placeholder="Your Name" /><br><br>
+<input id="custMobile" placeholder="Mobile Number" /><br><br>
+<button onclick="sendOTP()">Send OTP</button>
+<input id="otpInput" placeholder="Enter OTP" style="display:none; margin-top:.5rem;" />
+<button id="verifyBtn" style="display:none; margin-top:.5rem;" onclick="verifyOTP()">Verify OTP</button>
+</div>
+
+<script>
+let lang='en';
+let userName='',userMobile='',otp='';
+let cart={};
+
+// WIDE RANGE OF PRODUCTS RESTORED
+const groceries=[
+{en:'Regular Rice 1kg',hi:'साधारण चावल 1 किलो',price:60,icon:'🍚'},
+{en:'Basmati Rice 1kg',hi:'बासमती चावल 1 किलो',price:120,icon:'🍚'},
+{en:'Toor Dal 1kg',hi:'तूर दाल 1 किलो',price:140,icon:'🌾'},
+{en:'Moong Dal 1kg',hi:'मूंग दाल 1 किलो',price:130,icon:'🌾'},
+{en:'Chana Dal 1kg',hi:'चना दाल 1 किलो',price:110,icon:'🌾'},
+{en:'Urad Dal 1kg',hi:'उड़द दाल 1 किलो',price:150,icon:'🌾'},
+{en:'Masoor Dal 1kg',hi:'मसूर दाल 1 किलो',price:135,icon:'🌾'},
+{en:'Rajma 1kg',hi:'राजमा 1 किलो',price:160,icon:'🫘'},
+{en:'Kabuli Chana 1kg',hi:'काबुली चना 1 किलो',price:140,icon:'🫘'},
+{en:'Sugar 1kg',hi:'चीनी 1 किलो',price:45,icon:'🍬'},
+{en:'Salt 1kg',hi:'नमक 1 किलो',price:20,icon:'🧂'},
+{en:'Aashirvaad Atta',hi:'आशीर्वाद आटा',price:210,icon:'🌾'},
+{en:'Tata Tea 250g',hi:'टाटा चाय 250 ग्राम',price:95,icon:'☕'},
+{en:'Nescafe Coffee 100g',hi:'नेसकैफे कॉफी 100 ग्राम',price:320,icon:'☕'},
+{en:'Fortune Oil 1L',hi:'फॉर्च्यून तेल 1 लीटर',price:140,icon:'🛢️'},
+{en:'Surf Excel 1kg',hi:'सर्फ एक्सेल 1 किलो',price:190,icon:'🧼'},
+{en:'Rin Soap',hi:'रिन साबुन',price:25,icon:'🧼'},
+{en:'Colgate Toothpaste',hi:'कोलगेट टूथपेस्ट',price:55,icon:'🪥'},
+{en:'Lux Soap',hi:'लक्स साबुन',price:35,icon:'🧴'}
+];
+
+const snacks=[
+{en:'Parle-G',hi:'पार्ले-जी',price:10,icon:'🍪'},
+{en:'Good Day',hi:'गुड डे',price:20,icon:'🍪'},
+{en:'Marie Gold',hi:'मारी गोल्ड',price:20,icon:'🍪'},
+{en:'Lays Chips',hi:'लेज़ चिप्स',price:20,icon:'🍟'},
+{en:'Hide & Seek',hi:'हाइड एंड सीक',price:30,icon:'🍪'},
+{en:'Bourbon',hi:'बॉर्बन',price:30,icon:'🍪'},
+{en:'Monaco',hi:'मोनाको',price:10,icon:'🍪'},
+{en:'Kurkure',hi:'कुरकुरे',price:20,icon:'🌶️'},
+{en:'Bingo Mad Angles',hi:'बिंगो मैड एंगल्स',price:20,icon:'🌶️'},
+{en:'Haldiram Namkeen',hi:'हल्दीराम नमकीन',price:40,icon:'🥨'},
+{en:'Uncle Chips',hi:'अंकल चिप्स',price:20,icon:'🍟'},
+{en:'Peanuts 200g',hi:'मूंगफली 200 ग्राम',price:40,icon:'🥜'},
+{en:'Chocolates Mix',hi:'मिक्स चॉकलेट',price:50,icon:'🍫'}
+];
+
+function nameOf(p){return lang==='hi'?p.hi:p.en}
+
+function renderProducts(list,el){
+const box=document.getElementById(el);box.innerHTML='';
+list.forEach(p=>{
+const key=p.en;
+const q=cart[key]?.qty||0;
+box.innerHTML+=`<div class="product"><div class="pic">${p.icon}</div><h4>${nameOf(p)}</h4><p>₹${p.price}</p><div class="qty"><button onclick="updateCart('${key}',${p.price},-1)">−</button><span>${q}</span><button onclick="updateCart('${key}',${p.price},1)">+</button></div></div>`;
+});
+}
+
+function updateCart(name,price,delta){
+if(!cart[name]) cart[name]={qty:0,price};
+cart[name].qty+=delta;
+if(cart[name].qty<=0) delete cart[name];
+renderAll();
+}
+
+function renderCart(){
+const c=document.getElementById('cartItems');c.innerHTML='';
+let total=0,count=0;
+for(let k in cart){
+const it=cart[k];total+=it.qty*it.price;count+=it.qty;
+c.innerHTML+=`<div class="cart-item"><span>${k} × ${it.qty}</span><span>₹${it.qty*it.price}</span></div>`;
+}
+if(!count) c.innerText=lang==='hi'?'कोई सामान नहीं':'No items added';
+document.getElementById('total').innerText=(lang==='hi'?'कुल: ₹':'Total: ₹')+total;
+document.getElementById('cartCount').innerText=count;
+}
+
+function renderAll(){renderProducts(groceries,'groceryList');renderProducts(snacks,'snackList');renderCart();}
+
+function scrollToPanel(id){document.getElementById(id).scrollIntoView({behavior:'smooth'})}
+
+function checkout(){
+if(!userName||!userMobile){alert('Please login first');return;}
+let msg=`Order to Tiwari General Store%0AName: ${userName}%0AMobile: ${userMobile}%0A`;
+let total=0;
+for(let k in cart){msg+=`${k} x ${cart[k].qty}%0A`;total+=cart[k].qty*cart[k].price}
+msg+=`Total: ₹${total}`;
+window.open(`https://wa.me/918859816816?text=${msg}`,'_blank');
+}
+
+function setLang(l){lang=l;document.getElementById('title').innerText=l==='hi'?'तिवारी जनरल स्टोर':'Tiwari General Store';document.getElementById('subtitle').innerText=l==='hi'?'ऑनलाइन खरीदारी – सताहा, मथुरा':'Online Shopping – Satoha, Mathura';document.getElementById('gTitle').innerText=l==='hi'?'किराना और दैनिक सामान':'Groceries & Daily Needs';document.getElementById('sTitle').innerText=l==='hi'?'नाश्ता और बिस्कुट':'Snacks & Biscuits';document.getElementById('cTitle').innerText=l==='hi'?'🛒 आपकी टोकरी':'🛒 Your Cart';renderAll();}
+
+function sendOTP(){userName=document.getElementById('custName').value;userMobile=document.getElementById('custMobile').value;if(!userName||!userMobile){alert('Enter name and mobile number');return;}otp=Math.floor(1000+Math.random()*9000);alert('Your OTP is: '+otp);document.getElementById('otpInput').style.display='inline';document.getElementById('verifyBtn').style.display='inline';}
+function verifyOTP(){const input=document.getElementById('otpInput').value;if(input==otp){alert('Login successful');document.getElementById('loginBox').innerHTML=`Welcome, ${userName}`;}else{alert('Incorrect OTP');}}
+
+function filterProducts(){const term=document.getElementById('searchBar').value.toLowerCase();const fG=groceries.filter(p=>p.en.toLowerCase().includes(term)||p.hi.toLowerCase().includes(term));const fS=snacks.filter(p=>p.en.toLowerCase().includes(term)||p.hi.toLowerCase().includes(term));renderProducts(fG,'groceryList');renderProducts(fS,'snackList');}
+
+renderAll();
+</script>
+</body>
+</html>
